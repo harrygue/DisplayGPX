@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Display GPX</title>
+    <link rel="stylesheet"  href="/main.css" />
+    <link rel="stylesheet"  href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.4.0/gpx.min.js"></script>
+
+    <style>
+
+        #mapid { height: 360px; }
+    </style>
+</head>
+<body>
+    <div class="container-flex">
+        <div class="thumbnail">
+            <h1>Display GPX</h1>
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div id="mapid"></div>
+                        <p>Uploaded File: <%=file%></p>
+                        <p>Elevations (up/down): <%=alt.pos.toFixed(0)%> / <%=alt.neg.toFixed(0)%> </p>
+                        <p>Total Distance: <%= (totalDist/1000).toFixed(2)%> km</p>
+                    </div>
+                    <div class="col-md-9">
+                        <div id="elevation" style="width:600px;height:250px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var mymap = L.map('mapid').setView([47.396282516419887542724609375, 8.3448975719511508941650390625], 8);
+        mymap.flyTo([47.396282516419887542724609375, 8.3448975719511508941650390625], 10)
+        var mapbox_key = '<%= process.env.MAPBOX_KEY %>';
+        L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            tileSize: 512,
+            id: 'mapbox/streets-v11',
+            zoomOffset: -1,
+            accessToken: mapbox_key
+        }).addTo(mymap);
+        mymap.locate({setView: true, maxZoom: 18});
+
+        let jsonObj = <%-JSON.stringify(jsonObj)%>;
+        let elevations = [];
+        let coordinates = [];
+
+        // let trkPts = JSON.stringify(jsonObj.gpx.trk[0].trkseg[0].trkpt,null,4); 
+        let trkPts = jsonObj.gpx.trk[0].trkseg[0].trkpt;
+        trkPts.forEach((tp) => {
+            elevations.push(tp.ele[0]);
+            coordinates.push([tp.$.lat,tp.$.lon]);
+        });
+
+
+         // DISPLAY GPX TRACK WITH  geoJSON
+        var geoJSONgpx = <%- JSON.stringify(geoJSONgpx)%>;
+        var myLines = [{
+            "type": "LineString",
+            "coordinates": coordinates
+        }];
+
+        var myStyle = {
+            "color": "#6600ff",
+            "weight": 5,
+            "opacity": 0.65
+        };
+
+         L.geoJSON(geoJSONgpx, {
+            style: myStyle
+        }).addTo(mymap);
+
+        // PLOT ELEVATION INTO LINE CHART WITH PLOTLY
+        let sumDist = <%- JSON.stringify(sumDist) %>;
+
+        let trace1 = {
+            x: sumDist,
+            y: elevations,
+            mode: "lines",
+            name: "Elevation",
+            line: {
+                color: 'rgb(55, 128, 191)',
+                width: 3
+            }
+        };
+
+        data = [trace1];
+
+        var layout = {
+            title:'Elevation',
+            xaxis: {
+                title: 'Distance [km]',
+                showgrid: true
+            },
+            yaxis: {
+                title: 'Altitude [m]',
+                showgrid: true,
+                zeroline: true
+            },
+            width: 400,
+            height: 300
+          };
+
+        Plotly.newPlot("elevation",data,layout)
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<h1>Upload</h1>
+
+<form action="/upload" enctype="multipart/form-data" method="post">
+    <input type="file" name="gpxTrack" id="">
+    <button type="submit">Upload to Disc</button>
+</form>
+<form action="/uploadToMongo" enctype="multipart/form-data" method="post">
+    <input type="file" name="fileToMongo" id="">
+    <button type="submit">Upload to Mongo</button>
+</form>
+<form action="/uploadAndRead" enctype="multipart/form-data" method="post">
+    <input type="file" name="fileRead" id="">
+    <button type="submit">Upload And Read File</button>
+</form>
+<p><a href="/">Home</a></p>
